@@ -1,0 +1,69 @@
+﻿@page "/"
+@using WhatAreTheOdds.Extensions
+
+<MudGrid>
+    @if (!string.IsNullOrEmpty(_oddsOfBeingSelected))
+    {
+        
+    <MudItem xs="12">
+        <MudText Typo="Typo.h5">Chances Of Being Selected:</MudText>
+        <MudText Typo="Typo.h5">@_oddsOfBeingSelected</MudText>
+    </MudItem>
+    }
+
+        <MudItem xs="12" sm="7">
+        <MudPaper Class="pa-4">
+            <MudForm @ref="form" @bind-IsValid="@success" @bind-Errors="@errors">
+                <MudNumericField HelperTextOnFocus="true" Min="1" HelperText="If a test is given every month, and the student was selected October and again in January, then input 4 (October - January = 4 months)" T="double" @bind-Value="@_oddsCalculator.NumberOfTestsGiven" Label="Number Of Tests Given:" Required="true" RequiredError="Number Of Tests Given Is Required!"/>
+
+                <MudNumericField HelperTextOnFocus="true" Min="1" HelperText="The number of times the student was selected between first time student was tested and the last time student was tested" T="double" @bind-Value="@_oddsCalculator.NumberOfTimesStudentSelected" Label="Number Of Times Student Selected For Drug Screening:" Required="true" RequiredError="Number Of Times Student Selected For Drug Screening Is Required!"/>
+
+                <MudNumericField HelperTextOnFocus="true" Min="1" HelperText="Typically, this is the number of students in the school where the random drug testing occurs. Note: Some parents may opt their children out of random drug screening, so the number is likely less than the number of students enrolled at the school." T="double" @bind-Value="@_oddsCalculator.NumberOfStudentsInSchool" Label="Number Of Students Eligible For Drug Screening:" Required="true" RequiredError="Number Of Students Eligible For Drug Screening Is Required!"/>
+
+                <MudNumericField HelperTextOnFocus="true" Min="1" HelperText="Example: At Fort Scott Middle School, 10 students are randomly selected from the entire eligible student body" T="double" @bind-Value="@_oddsCalculator.NumberOfStudentsSelectedFromSchoolForEachRandomDrugScreening" Label="Number Of Students Selected For Random Drug Screening:" Required="true" RequiredError="Number Of Students Selected For Random Drug Screening Is Required!"/>
+            </MudForm>
+        </MudPaper>
+        <MudPaper Class="pa-4 mt-4">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" DisableElevation="true" OnClick="@Calculate">Calculate</MudButton>
+            @* <MudButton Variant="Variant.Filled" Color="Color.Secondary" DisableElevation="true" OnClick="@(()=>form.Reset())" Class="mx-2">Reset</MudButton> *@
+            @* <MudButton Variant="Variant.Filled" DisableElevation="true" OnClick="@(()=>form.ResetValidation())">Reset Validation</MudButton> *@
+        </MudPaper>
+    </MudItem>
+
+</MudGrid>
+
+@code {
+
+    bool success;
+    MudForm form;
+    string[] errors = { };
+    private OddsCalculatorModel _oddsCalculator = new();
+    
+    private string _oddsOfBeingSelected = string.Empty;
+    
+    
+    public class OddsCalculatorModel
+    {
+        public double NumberOfTestsGiven { get; set; }
+        public double NumberOfTimesStudentSelected { get; set; }
+        public double NumberOfStudentsInSchool { get; set; }
+        public double NumberOfStudentsSelectedFromSchoolForEachRandomDrugScreening { get; set; }
+
+        public double NumberOfTimesStudentNOTSelected => NumberOfTestsGiven - NumberOfTimesStudentSelected;
+
+        public double NumberOfStudentsNOTRandomlySelectedForEachTest => NumberOfStudentsInSchool - NumberOfStudentsSelectedFromSchoolForEachRandomDrugScreening;
+
+        public double ChanceOfStudentBeingSelectedXNumberOfTimes => (double)(NumberOfTestsGiven / NumberOfTimesStudentSelected) * 
+                                                                    (double)((NumberOfStudentsSelectedFromSchoolForEachRandomDrugScreening / NumberOfStudentsInSchool).Pow(NumberOfTimesStudentSelected)) * 
+                                                                    (double)((NumberOfStudentsNOTRandomlySelectedForEachTest / NumberOfStudentsInSchool).Pow(NumberOfTimesStudentNOTSelected));
+        
+    }
+
+
+    private void Calculate()
+    {
+         form.Validate();
+        _oddsOfBeingSelected = _oddsCalculator.ChanceOfStudentBeingSelectedXNumberOfTimes.ToString("0.000%");
+    }
+
+}
